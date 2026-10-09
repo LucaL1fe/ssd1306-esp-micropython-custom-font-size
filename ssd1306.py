@@ -113,25 +113,16 @@ class SSD1306:
                 size: font size of text
                 color: color of text to be displayed
         '''
-        background = 0
-        # clear screen
-        self.fill(background)
-        info = []
-        # Creating reference characters to read their values
-        self.text(text, x, y)
-        for i in range(x, x + (8 * len(text))):
-            for j in range(y, y + 8):
-                # Fetching and saving details of pixels, such as
-                # x co-ordinate, y co-ordinate, and color of the pixel
-                px_color = self.pixel(i, j)                
-                info.append((i, j, px_color))
-        # Clearing the reference characters from the screen
-        self.text(text, x, y, background)        
+        width = 8 * len(text)
+        # Creating reference characters in a separate buffer, so text that is
+        # already on the screen is neither read back nor cleared
+        ref = framebuf.FrameBuffer(bytearray(width), width, 8, framebuf.MONO_VLSB)
+        ref.text(text, 0, 0)
         # Writing the custom-sized font characters on screen
-        for px_info in info:
-            self.fill_rect(size * px_info[0] - (size - 1) * x,
-                           size * px_info[1] - (size - 1) * y,
-                           size, size, px_info[2])        
+        for i in range(width):
+            for j in range(8):
+                self.fill_rect(x + size * i, y + size * j,
+                               size, size, ref.pixel(i, j))
 
 
 class SSD1306_I2C(SSD1306):
@@ -139,6 +130,7 @@ class SSD1306_I2C(SSD1306):
         self.i2c = i2c
         self.addr = addr
         self.temp = bytearray(2)
+        self.write_list = [b"\x40", None] # Co=0, D/C#=1
         super().__init__(width, height, external_vcc)
 
     def write_cmd(self, cmd):
@@ -147,12 +139,8 @@ class SSD1306_I2C(SSD1306):
         self.i2c.writeto(self.addr, self.temp)
 
     def write_data(self, buf):
-        self.temp[0] = self.addr << 1
-        self.temp[1] = 0x40 # Co=0, D/C#=1
-        self.i2c.start()
-        self.i2c.write(self.temp)
-        self.i2c.write(buf)
-        self.i2c.stop()
+        self.write_list[1] = buf
+        self.i2c.writevto(self.addr, self.write_list)
 
 
 class SSD1306_SPI(SSD1306):
