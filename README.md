@@ -17,6 +17,8 @@ The key is the new `write_text()` function in `ssd1306.py`.
 oled.write_text(f"{i}%", 5, 15, 5)  # Text, Position x, Position y, **font size multiplier**
 ```
 
+`write_text()` draws on top of what is already on the screen, so you can write several texts before calling `oled.show()`. Call `oled.fill(0)` first if you want to clear the screen.
+
 I hope this helps! If it does, a star would be wonderful :D
 
 Credits:

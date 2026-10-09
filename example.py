@@ -9,6 +9,7 @@ oled = ssd1306.SSD1306_I2C(oled_width, oled_height, i2c)
 
 while True:
     for i in range(100):
+       oled.fill(0) #clear screen, write_text() draws on top of what is already there
        oled.write_text(f"{i}%", 5, 15, 5) #scale font with factor 5
        oled.show()       
        time.sleep(0.5)
